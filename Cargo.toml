@@ -1,0 +1,48 @@
+[package]
+name = "rvoip_g729ab"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+description = "Pure Rust G.729AB codec crate prepared for standalone use and later rvoip integration"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/eisenzopf/rvoip_g729ab"
+homepage = "https://github.com/eisenzopf/rvoip_g729ab"
+documentation = "https://docs.rs/rvoip_g729ab"
+keywords = ["voip", "sip", "audio", "codec", "g729"]
+categories = ["multimedia::audio", "multimedia::encoding", "network-programming", "no-std"]
+exclude = [
+    "docs/assets/**",
+    "docs/AGENT_BAKEOFF.md",
+    "docs/PROOF.md",
+    "docs/REFERENCES.md",
+    "docs/index.md",
+    "docs/implementation/**",
+    "docs/specification/**",
+    "PRD.md",
+    "IMPLEMENTATION_PLAN.md",
+    "SPECIFICATION.md",
+]
+
+[features]
+default = ["std", "annex_b"]
+std = []
+annex_b = []
+itu_serial = ["std"]
+
+[dependencies]
+
+[[bin]]
+name = "g729-cli"
+path = "src/bin/cli.rs"
+required-features = ["std"]
+
+[[bin]]
+name = "encoder"
+path = "src/bin/encoder.rs"
+required-features = ["std", "itu_serial"]
+
+[[bin]]
+name = "decoder"
+path = "src/bin/decoder.rs"
+required-features = ["std", "itu_serial"]
