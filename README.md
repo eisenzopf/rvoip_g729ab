@@ -25,12 +25,17 @@ The repo therefore preserves both:
 
 ## Why It Worked This Time
 
-The main process lesson was that implementation quality improved once the project was forced through explicit intermediate artifacts:
+The main process lesson was that implementation quality improved once the project was forced through explicit intermediate artifacts and then repeatedly self-validated against the source material:
 
 1. `PRD.md` defined the codec scope, compliance target, and constraints.
 2. `IMPLEMENTATION_PLAN.md` turned that into phased architecture and test strategy.
 3. `SPECIFICATION.md` and the deeper spec docs tightened the function-level details until the plan and the codec references aligned.
 4. Only then did the implementation become stable enough to converge quickly.
+
+Two parts of that process mattered a lot:
+
+- The PRD was not accepted after a first draft. It was run through a self-validation loop until coverage looked complete, which took roughly 50 iterations.
+- The specification was even more iteration-heavy. It went through nearly 100 refinement and self-validation passes before the validation step judged it to have effectively complete coverage against the plan, references, and implementation targets.
 
 Those artifacts are preserved here as first-class documents because they were part of the solution, not just project overhead.
 
