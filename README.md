@@ -2,54 +2,51 @@
 
 `rvoip_g729ab` is a working pure-Rust G.729AB library intended for standalone use now and later integration into [`rvoip`](https://github.com/eisenzopf/rvoip).
 
-This repo is also a compact case study in AI-assisted systems work: the project got materially better once the work was forced through `PRD -> implementation plan -> specification -> implementation`, and the final result came from a bakeoff across Claude Code, OpenAI Codex, and Google Antigravity rather than a single uninterrupted agent run.
+This repo is also a case study in AI-assisted systems work. The central question was:
 
-## Result Snapshot
+Can any of the 2026 coding agents, specifically Claude Code, OpenAI Codex, or Google Antigravity, actually produce a working Rust G.729AB encoder/decoder in a way that was not viable in 2025?
 
-- Canonical proof run: March 6, 2026 (`20260306T033253Z`)
-- Tier 0 Rust-native tests: `81 passed / 0 failed`
-- Tier 1 ITU conformance: `27/27` vectors bit-exact
-- Tier 2 real-audio comparison: the archived March 6 run reports exact C-reference parity for all 12 recorded comparison sets; the first two archived examples each matched over `7,197,120` samples with `max_abs_error = 0`, `rms_error = 0.0`, and `SNR = inf`
-- Tier P structural checks: `no_std` build, feature matrix, send bounds, size assertions, `unsafe` ban, required layout checks, and benchmark capture all passed in the archived result
+The answer from this project was yes, but not by going straight from prompt to implementation. The successful path was:
 
-Details: [Proof and Archived Result Summary](docs/PROOF.md)
+`PRD -> implementation plan -> specification -> repeated self-validation -> implementation`
 
-## Why This Project Mattered
+## Summary
 
-Working Rust implementations of G.729AB are rare, the algorithmic surface is large, and bit-exact conformance requires more than getting the high-level DSP ideas mostly right. The useful outcome here is not just that the library now exists. It is that a disciplined planning stack plus the right agent mix was enough to get a systems-level codec over the line.
+- The repo now contains a working pure-Rust G.729AB library.
+- The canonical archived proof run is March 6, 2026 (`20260306T033253Z`).
+- A direct PRD-to-code attempt was not enough. All of the coding agents failed to produce an encoder/decoder that actually worked according to the spec when asked to jump straight from PRD to implementation.
+- The useful lesson was not that one agent did everything best. It was that different agents helped in different phases, and the planning/specification loop mattered more than raw code generation speed.
+- The strongest technique was forcing the project through detailed planning artifacts and repeatedly self-validating those artifacts before trusting implementation.
 
-The repo therefore preserves both:
+## What We Learned
+
+- A hard codec project like G.729AB was still not something to treat as a one-shot code-generation problem.
+- The PRD mattered. It was iterated roughly 50 times with self-validation before coverage looked complete enough to trust.
+- Even a good PRD was not enough by itself. When the agents were asked to implement directly from the PRD, none of them produced a working encoder/decoder that conformed to the spec.
+- That failure is what drove the next step: create a detailed implementation plan before continuing.
+- The specification mattered even more. It went through nearly 100 refinement and self-validation passes before it was considered to have effectively complete coverage.
+- Claude Code was strongest at research, PRD quality, specification refinement, and the final algorithmic polish.
+- OpenAI Codex was strongest at orchestration, early project momentum, and getting to an end-to-end implementation quickly.
+- Google Antigravity was useful early for browsing/reference gathering, but did not remain competitive through the full implementation cycle.
+- The winning pattern was not “pick the best model once”. It was “use the right agent at the right phase, with planning artifacts that can be checked and refined”.
+
+## Why This Repo Exists
+
+This repo preserves both of the things that ended up mattering:
 
 - the library itself, for developers who want to use or integrate it
-- the planning and retrospective documents that explain how the project got from failed attempts in 2025 to a working archived result in 2026
+- the planning and retrospective material that explains why this version of the project succeeded
 
-## Why It Worked This Time
+If you want the deeper story, start here:
 
-The main process lesson was that implementation quality improved once the project was forced through explicit intermediate artifacts and then repeatedly self-validated against the source material:
+- [PRD](PRD.md)
+- [Implementation Plan](IMPLEMENTATION_PLAN.md)
+- [Specification](SPECIFICATION.md)
+- [Proof and Archived Result Summary](docs/PROOF.md)
+- [Agent Bakeoff Retrospective](docs/AGENT_BAKEOFF.md)
+- [References and Credits](docs/REFERENCES.md)
 
-1. `PRD.md` defined the codec scope, compliance target, and constraints.
-2. `IMPLEMENTATION_PLAN.md` turned that into phased architecture and test strategy.
-3. `SPECIFICATION.md` and the deeper spec docs tightened the function-level details until the plan and the codec references aligned.
-4. Only then did the implementation become stable enough to converge quickly.
-
-Two parts of that process mattered a lot:
-
-- The PRD was not accepted after a first draft. It was run through a self-validation loop until coverage looked complete, which took roughly 50 iterations.
-- The specification was even more iteration-heavy. It went through nearly 100 refinement and self-validation passes before the validation step judged it to have effectively complete coverage against the plan, references, and implementation targets.
-
-Those artifacts are preserved here as first-class documents because they were part of the solution, not just project overhead.
-
-## Agent Bakeoff Summary
-
-This repo captures one concrete project retrospective, not a general benchmark:
-
-- Claude Code was strongest at research, PRD generation, specification refinement, and the final detailed algorithmic polish.
-- OpenAI Codex was strongest at orchestration, end-to-end project momentum, and the earliest full implementation pass.
-- Google Antigravity was useful for early browsing and reference gathering, but did not remain competitive through the full implementation cycle.
-
-More detail: [Agent Bakeoff Retrospective](docs/AGENT_BAKEOFF.md)
-
-## Developer Quick Start
+## Use The Library
 
 Add the crate to `Cargo.toml`:
 
@@ -78,45 +75,39 @@ let mut pcm_out = [0i16; FRAME_SAMPLES];
 decoder.decode(&bitstream, &mut pcm_out);
 ```
 
-Basic packaging-only verification:
+See also: [examples/basic_encode_decode.rs](examples/basic_encode_decode.rs)
+
+## Test The Repo
+
+Fast packaging/build sanity check:
 
 ```bash
 cargo check --lib --bins --examples --features "std,annex_b,itu_serial"
 ```
 
-See also: [examples/basic_encode_decode.rs](examples/basic_encode_decode.rs)
-
-## Public End-to-End Smoke Test
-
-For a real download-and-run check, the repo includes an opt-in integration test that:
-
-1. downloads a public 8 kHz telephony WAV from the Open Speech Repository
-2. extracts the raw PCM payload
-3. runs `g729-cli encode --no-vad`
-4. runs `g729-cli decode`
-5. verifies the decoded PCM is frame-aligned and non-silent
-
-Run it with:
+Public end-to-end smoke test:
 
 ```bash
 cargo test --test public_sample_roundtrip -- --ignored --nocapture
 ```
 
+That smoke test downloads a public 8 kHz telephony WAV from the Open Speech Repository, extracts raw PCM, runs `g729-cli encode --no-vad`, runs `g729-cli decode`, and verifies that the decoded PCM is frame-aligned and non-silent.
+
 Notes:
 
-- This test is `ignored` by default because it downloads a public sample over the network.
+- The smoke test is `ignored` by default because it depends on network access.
 - The sample source is `OSR_us_000_0030_8k.wav` from the Open Speech Repository.
 - The test uses `curl` when available and falls back to `python3` for the download step.
-- The Open Speech Repository allows use of these files for VoIP testing and asks that the source be identified.
 
-## Key Documents
+## Archived Result Snapshot
 
-- [PRD](PRD.md)
-- [Implementation Plan](IMPLEMENTATION_PLAN.md)
-- [Specification](SPECIFICATION.md)
-- [Proof and Archived Result Summary](docs/PROOF.md)
-- [Agent Bakeoff Retrospective](docs/AGENT_BAKEOFF.md)
-- [References and Credits](docs/REFERENCES.md)
+- Canonical proof run: March 6, 2026 (`20260306T033253Z`)
+- Tier 0 Rust-native tests: `81 passed / 0 failed`
+- Tier 1 ITU conformance: `27/27` vectors bit-exact
+- Tier 2 real-audio comparison: the archived March 6 run reports exact C-reference parity for all 12 recorded comparison sets
+- Tier P structural checks: `no_std` build, feature matrix, send bounds, size assertions, `unsafe` ban, required layout checks, and benchmark capture all passed in the archived result
+
+More detail: [Proof and Archived Result Summary](docs/PROOF.md)
 
 ## References and Credits
 
